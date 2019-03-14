@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Oingo</title>
+
+    <!-- bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/bootstrap-table.css" rel="stylesheet"/>
+    <link href="css/bootstrap-datetimepicker.css" rel="stylesheet">
+    <script src="js/jquery.min.js" type="text/javascript"></script>
+    <script src="js/popper.min.js" type="text/javascript"></script>
+    <script src="js/bootstrap.min.js" type="text/javascript"></script>
+    <!-- table -->
+    <script type="text/javascript" src="js/bootstrap-table.js"></script>
+    <script type="text/javascript" src="js/bootstrap-table-zh-CN.js"></script>
+    <!-- timer -->
+    <script type="text/javascript" src="js/bootstrap-datetimepicker.js"></script>
+    <script type="text/javascript" src="js/bootstrap-datetimepicker.zh-CN.js"></script>
+    <style>
+        .divfloat{
+            float:left
+        }
+
+    </style>
+</head>
+<body>
+<!-- 模态框（Modal） -->
+<div class="modal fade" id="addModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel">
+                    Send request
+                </h4>
+            </div>
+            <div class="modal-body">
+                <form class="bs-example bs-example-form" role="form">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="user name" id="add_friend">
+                    </div>
+                    <br>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="sendRequest()">
+                    confirm
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<div class="modal fade" id="addModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="myModalLabel2">
+                    Friends list
+                </h4>
+            </div>
+            <div class="modal-body" id="resultText">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">close
+                </button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+
+<div class="main" id="container" style="width: 100%; height: 100%; padding: 0; overflow: hidden;">
+    <div id="down" style="width: 100%; height: 80%;padding:20px">
+        <div style="width: 100%;">
+            <div id="toolbar">
+                <div style="float: left;">
+                    <button type="button" class="btn btn-success" onclick="showAddFriend()">add friend</button>
+                    <button type="button" class="btn btn-default" onclick="showFriends()">show friends</button>
+                    <button type="button" class="btn btn-danger" onclick="pass()">pass</button>
+                    <button type="button" class="btn btn-success" onclick="reject()">reject</button>
+                    <button type="button" class="btn btn-default" onclick="javascript:window.location.href='index.html'">Back</button>
+                </div>
+            </div>
+            <div class="table-responsive" id="test"
+                 style="overflow: auto; width: 100%; height: 98%;">
+                <table class="table table-hover table-striped text-nowrap"
+                       id="result" style="width: 100%;height: 100%;">
+                    <thead></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+       window.onload = function() {
+			//初始化表格
+			initTable();
+	   }
+
+	   function showAddFriend() {
+            $('#addModal').modal('show');
+       }
+
+       function sendRequest(){
+           var toName = document.getElementById('add_friend').value;
+           var url = "friends/sendRequest?toName="+toName;
+            $.ajax({
+				type : "GET",
+				url : url,
+				async : true,
+				dataType : "json",
+				success : function(data) {
+					alert(data.message);
+				}
+			});
+       }
+
+       function showFriends(){
+           var url = 'friends/listFriends';
+           $.ajax({
+				type : "GET",
+				url : url,
+				async : true,
+				dataType : "text",
+				success : function(data) {
+					var divA = document.getElementById("resultText");
+					divA.innerHTML = data;
+					$('#addModal2').modal('show');
+				}
+		   });
+       }
+
+		function initTable() {
+            var url = 'friends/getAskingRequest';
+			$('#result').bootstrapTable({
+			    toolbar : '#toolbar',
+			    url:url,
+			    method : 'get',
+				contentType : "application/x-www-form-urlencoded",
+				locale : 'zh-CN',
+				pagination : true,
+				pageNumber : 1,
+				pageSize : 10,
+				pageList : [ 10, 20, 50 ],
+				sidePagination : "client",
+				showRefresh : false,
+				search : true,
+				showColumns : false,
+				sortable : true,
+				sortOrder : 'asc',
+				showToggle : false,
+				columns : [ {
+					title : 'check',
+					checkbox : true,
+				},{
+					title : 'askId',
+					field : 'askId',
+				}, {
+					title : 'askName',
+					field : 'askName',
+				}, {
+					title : 'requestTime',
+					field : 'requestTime',
+				}]
+			})
+		}
+		function refreshTable() {
+		    var url = 'friends/getAskingRequest';
+			$('#result').bootstrapTable("refresh", {
+				url : url
+			});
+		}
+
+       function pass(){
+           var choice = $('#result').bootstrapTable('getSelections');
+           if (choice.length > 1) {
+				alert("only one once！");
+				return;
+		   }
+		   if(choice.length == 0){
+		       alert("at least one！");
+			   return;
+		   }
+		   var askId = choice[0].askId;
+		   var requestTime = choice[0].requestTime;
+		   $.ajax({
+			   type : "GET",
+			   url : 'friends/replyRequest?askId=' + askId+'&requestTime='+requestTime+'&reply=yes',
+			   async : true,
+			   dataType : "json",
+			   success : function(data) {
+			       alert(data.message);
+			       refreshTable();
+			   }
+		   });
+       }
+
+       function reject(){
+           var choice = $('#result').bootstrapTable('getSelections');
+           if (choice.length > 1) {
+				alert("only one once！");
+				return;
+		   }
+		   if(choice.length == 0){
+		       alert("at least one！");
+			   return;
+		   }
+		   var askId = choice[0].askId;
+		   var requestTime = choice[0].requestTime;
+		   $.ajax({
+			   type : "GET",
+			   url : 'friends/replyRequest?askId=' + askId+'&requestTime='+requestTime+'&reply=no',
+			   async : true,
+			   dataType : "json",
+			   success : function(data) {
+			       alert(data.message);
+			       refreshTable();
+			   }
+		   });
+       }
+
+</script>
+</body>
+</html>

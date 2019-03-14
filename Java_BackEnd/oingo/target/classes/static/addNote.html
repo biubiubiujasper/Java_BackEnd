@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Post a note</title>
+
+    <!-- bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/bootstrap-table.css" rel="stylesheet"/>
+    <link href="../../assets/css/bootstrap-datetimepicker.min.css" el="stylesheet">
+    <script src="js/jquery.min.js" type="text/javascript"></script>
+    <script src="js/popper.min.js" type="text/javascript"></script>
+    <script src="js/bootstrap.min.js" type="text/javascript"></script>
+    <!-- table -->
+    <script type="text/javascript" src="js/bootstrap-table.js"></script>
+    <script type="text/javascript" src="js/bootstrap-table-zh-CN.js"></script>
+    <!-- timer -->
+    <script type="text/javascript" src="js/bootstrap-datetimepicker.js"></script>
+    <script type="text/javascript" src="js/bootstrap-datetimepicker.zh-CN.js"></script>
+    <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+    <script type="text/javascript" src="js/googlemap.js"></script>
+    <style>
+        .divfloat{
+            float:left
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="main" id="container" style="width: 100%; height: 100%; padding: 0; overflow: hidden;">
+    <div class="divfloat" id="up" style="width: 100%; height: 20%;padding:20px">
+        <div class="divfloat" style="width: 30%;">
+            <button type="button" class="btn btn-success" onclick="post()">Post</button>
+            <button type="button" class="btn btn-default" onclick="javascript:window.location.href='index.html'">Back</button>
+
+        </div>
+    </div>
+    <div id="down" style="width: 100%; height: 80%;padding:20px">
+        <div style="width: 100%;height: 100%">
+            <div style="width: 100%;">
+                <label><font size ="5" face="times new romance">content</font></label>
+            </div>
+            <div style="width: 100%;">
+                <textarea style="width: 100%;" id="content"></textarea>
+            </div>
+            <div style="width: 100%;">
+                <input type="text" class="form-control" placeholder="tag" id="tag">
+            </div>
+            <div style="width: 100%;">
+                <label><font size ="3" face="times new romance">Filter</font></label>
+            </div>
+            <div style="width: 100%;">
+                <form class="bs-example bs-example-form" role="form">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="BeginTime yyyy-mm-dd HH:MM:SS" id="beginTime">
+                    </div>
+                    <br>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="EndTime yyyy-mm-dd HH:MM:SS" id="endTime">
+                    </div>
+                    <br>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="SpecialDate yyyy-mm-dd" id="specialDate">
+                    </div>
+                    <br>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="RepeatDate (which day of week)" id="repeatDate">
+                    </div>
+                    <br>
+                    <div class="input-group">
+                        <select class=" form-control" id="range">
+                            <option value="none" selected disabled style="display: none;">--choose seen range--</option>
+                            <option value="none">none</option>
+                            <option value="friends">friends</option>
+                            <option value="everyone">everyone</option>
+                        </select>
+                    </div>
+                    <br>
+                    <div class="input-group">
+                        <select class=" form-control" id="festival">
+                            <option value="none" selected disabled style="display: none;">--choose a festival--</option>
+                        </select>
+                    </div>
+                    <br>
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="radius(int)" id="radius">
+                    </div>
+                </form>
+            </div>
+            <br>
+            <div style="width: 100%;">
+                longitude:<label id="longitude"></label>
+                <br>
+                latitude:<label id="latitude"></label>
+            </div>
+            <div id="map"style="width: 400px; height: 400px"></div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+       window.onload = function() {
+           initFestivalList();
+           if (navigator.geolocation) {
+               console.log(' Browser support geolocation ');
+               navigator.geolocation.getCurrentPosition(show_map,null ,null);
+           } else {
+               console.log(' Browser doesnt support geolocation ');
+           }
+
+	   }
+
+	   function initFestivalList(){
+	       $("#festival").html("");
+			$.ajax({
+				type : "GET",
+				url : "note/listFestival",
+				async : true,
+				dataType : "json",
+				success : function(data) {
+					var html = "";
+					html += '<option value="none" selected disabled style="display: none;">--choose a festival--</option>';
+					for(var i=0;i<data.length;i++){
+					    html += '<option value="'+data[i].fesid+'">' + data[i].name + '</option>';
+					}
+					$("#festival").append(html);
+				}
+			});
+	   }
+
+	   function show_map(position){
+	       var coords = position.coords;
+           var longitude = coords.longitude;
+           var latitude = coords.latitude;
+
+           document.getElementById('longitude').innerHTML = longitude;
+           document.getElementById('latitude').innerHTML = latitude;
+
+           var latlng = new google.maps.LatLng(coords.latitude, coords.longitude);
+           var myOptions = {
+           zoom : 20,
+           center : latlng,
+           mapTypeId : google.maps.MapTypeId.ROADMAP
+           };
+
+           var map1;
+           map1 = new google.maps.Map(document.getElementById("map"), myOptions);
+           var marker = new google.maps.Marker({
+           position : latlng,
+           map : map1
+           });
+
+	   }
+
+	   function post(){
+           if (navigator.geolocation) {
+               console.log(' Browser support geolocation ');
+               navigator.geolocation.getCurrentPosition(postReal,null ,null);
+           } else {
+               console.log(' Browser doesnt support geolocation ');
+           }
+	   }
+
+	   function postReal(position){
+	       var coords = position.coords;
+           var longitude = coords.longitude;
+           var latitude = coords.latitude;
+	       var content = $("#content").val();
+	       var beginTime = $("#beginTime").val();
+	       var endTime = $("#endTime").val();
+	       var specialDate = $("#specialDate").val();
+	       var repeatDate = $("#repeatDate").val();
+	       var fesId = $("#festival").val();
+	       var radius = $("#radius").val();
+           var range = $("#range").val();
+           var tag = $("#tag").val();
+	       var url = "note/addNote?content="+content+"&beginTime="+beginTime+"&endTime="+endTime+"&specialDate="+specialDate+"&fesId="+fesId+"&radius="+radius+"&longitude="+longitude+"&latitude="+latitude+"&repeatDate="+repeatDate+"&range="+range+"&tag="+tag;
+	       console.log(url);
+	       $.ajax({
+				type : "GET",
+				url : url,
+				async : true,
+				dataType : "json",
+				success : function(data) {
+				    alert(data.message);
+				    window.location.href='index.html';
+				}
+			});
+	   }
+
+</script>
+</body>
+</html>
